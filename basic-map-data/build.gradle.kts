@@ -1,9 +1,9 @@
 import com.install4j.gradle.Install4jTask
-import org.gradle.api.tasks.PathSensitivity.RELATIVE
 import org.gradle.kotlin.dsl.support.serviceOf
 
 plugins {
-    id("com.install4j.gradle") version ("11.0.0.1")
+    base
+    id("com.install4j.gradle") version ("11.0.0.2")
 }
 
 /**
@@ -40,9 +40,8 @@ dependencies {
     )
 }
 
-// TODO: Specify Install4J license information
 install4j {
-    license = "FLOAT:install4j.my.company.com"
+    license = "FLOAT:taskmaster.jre.saic.com"
 }
 
 tasks {
@@ -56,183 +55,68 @@ tasks {
         into(dataDir)
     }
 
-    // FIXME: Configuration cache problems found in this build.
-    //  Task `:basic-map-data:installer` of type `com.install4j.gradle.Install4jTask`: invocation of 'Task.project' at execution time is unsupported.
-    //  From configuration-cache-report.html:
-    //  Exception at `com.install4j.gradle.Install4jTask._init_$lambda$1(Unknown Source)`
     register<Install4jTask>("installer") {
 
         dependsOn(unzipMapData)
 
         // Inputs
-        val configFile: File = file("basic-map-data.install4j")
-        inputs.file(configFile)
-            .withPathSensitivity(RELATIVE)
-
-        val mapDataInstallerBaseName = "Basic-Map-Data"
-        inputs.property("mapDataInstallerBaseName", mapDataInstallerBaseName)
-
-        val linuxInstallerName = "Install-$mapDataInstallerBaseName-" +
-                "Linux"
-        inputs.property("linuxInstallerName", linuxInstallerName)
-
-        val mapDataVersion = "1.0"
-        inputs.property("mapDataVersion", mapDataVersion)
-
-        val mapDataDir: Provider<Directory> = dataDir.map {
-            it.dir("mapdata")
+        val installerOutputDir: Provider<Directory> =
+            project.layout.buildDirectory.dir("installers/${project.name}")
+        val installerOutputDirProperty: Provider<String> = installerOutputDir.map {
+            relativePath(it.asFile)
         }
-        inputs.dir(mapDataDir)
-            .withPathSensitivity(RELATIVE)
-
+        val mapDataInstallerBaseName = "Basic-Map-Data"
+        val linuxInstallerName = "Install-$mapDataInstallerBaseName-Linux"
+        val mapDataDir = dataDir.map { it: Directory ->
+            relativePath(it.dir("mapdata"))
+        }
+        val mapDataVersion = "1.0"
         val windowInstallerName = "Install-$mapDataInstallerBaseName-" +
                 "Windows"
-        inputs.property("windowInstallerName", windowInstallerName)
 
         // Outputs
-        val installerOutputDir =
-            project.layout.buildDirectory.dir("installers/${project.name}")
-
-        val install4jOutputsFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("output.txt")
+        val install4jOutputsFile: Provider<String> = installerOutputDir.map {
+            relativePath(it.file("output.txt"))
         }
-        outputs.file(install4jOutputsFile)
-
-        val install4jUpdatesFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("updates.xml")
+        val install4jUpdatesFile: Provider<String> = installerOutputDir.map {
+            relativePath(it.file("updates.xml"))
         }
-        outputs.file(install4jUpdatesFile)
-
-        val linuxInstallerFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$linuxInstallerName.sh")
+        val linuxInstallerFile: Provider<String> = installerOutputDir.map {
+            relativePath(it.file("$linuxInstallerName.sh"))
         }
-        outputs.file(linuxInstallerFile)
-
-        val windowsInstallerFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$windowInstallerName.exe")
+        val windowsInstallerFile: Provider<String> = installerOutputDir.map {
+            relativePath(it.file("$windowInstallerName.exe"))
         }
-        outputs.file(windowsInstallerFile)
 
-        val debuggingOutputFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$name-configuration.txt")
-        }
-        outputs.file(debuggingOutputFile)
-
-        // Configuration
-        val variableMap: MapProperty<String, Any> =
-            objects.mapProperty(String::class, Any::class)
-
-        variableMap.put("installerOutputDir", installerOutputDir.get().asFile.path)
-        variableMap.put("linuxInstallerName", linuxInstallerName)
-        variableMap.put("mapDataDir", mapDataDir.get().asFile.path)
-        variableMap.put("mapDataInstallerBaseName", mapDataInstallerBaseName)
-        variableMap.put("mapDataVersion", mapDataVersion)
-        variableMap.put("windowInstallerName", windowInstallerName)
-
-        projectFile = configFile
-        variables = variableMap
-
-        doFirst {
-
-            val outputFile = debuggingOutputFile.get().asFile
-            outputFile.parentFile.mkdirs()
-
-            outputFile.writeText("projectFile = $configFile\n")
-            variableMap.get().forEach { entry: Map.Entry<String, Any> ->
-                outputFile.appendText(
-                    "${entry.key} = ${entry.value}\n"
-                )
-            }
-        }
-    }
-
-    register<DefaultTask>("writeConfiguration") {
-
-        dependsOn(unzipMapData)
-
-        // Inputs
-        val configFile: File = file("basic-map-data.install4j")
-        inputs.file(configFile)
-            .withPathSensitivity(RELATIVE)
-
-        val mapDataInstallerBaseName = "Basic-Map-Data"
+        // Enable up-to-date checking
+        // projectFile is marked @Input; no need to specify it here
+        inputs.property("installerOutputDir", installerOutputDirProperty)
         inputs.property("mapDataInstallerBaseName", mapDataInstallerBaseName)
-
-        val linuxInstallerName = "Install-$mapDataInstallerBaseName-" +
-                "Linux"
         inputs.property("linuxInstallerName", linuxInstallerName)
-
-        val mapDataVersion = "1.0"
+        inputs.property("mapDataDir", mapDataDir)
         inputs.property("mapDataVersion", mapDataVersion)
-
-        val mapDataDir: Provider<Directory> = dataDir.map {
-            it.dir("mapdata")
-        }
-        inputs.dir(mapDataDir)
-            .withPathSensitivity(RELATIVE)
-
-        val windowInstallerName = "Install-$mapDataInstallerBaseName-" +
-                "Windows"
         inputs.property("windowInstallerName", windowInstallerName)
 
-        // Outputs
-        val installerOutputDir =
-            project.layout.buildDirectory.dir("installers/${project.name}")
-
-        val install4jOutputsFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("output.txt")
-        }
         outputs.file(install4jOutputsFile)
-
-        val install4jUpdatesFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("updates.xml")
-        }
         outputs.file(install4jUpdatesFile)
-
-        val linuxInstallerFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$linuxInstallerName.sh")
-        }
         outputs.file(linuxInstallerFile)
-
-        val windowsInstallerFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$windowInstallerName.exe")
-        }
         outputs.file(windowsInstallerFile)
 
-        val debuggingOutputFile: Provider<RegularFile> = installerOutputDir.map {
-            it.file("$name-configuration.txt")
-        }
-        outputs.file(debuggingOutputFile)
+        outputs.cacheIf { true }
 
-        // Configuration
-        val variableMap: MapProperty<String, Any> =
-            objects.mapProperty(String::class, Any::class)
+        // Specify inputs to the Install4J compiler
+        projectFile = file(relativePath("basic-map-data.install4j"))
+        destination.set(installerOutputDir.map { it.asFile })
 
-        variableMap.put("installerOutputDir", installerOutputDir.get().asFile.path)
-        variableMap.put("linuxInstallerName", linuxInstallerName)
-        variableMap.put("mapDataDir", mapDataDir.get().asFile.path)
-        variableMap.put("mapDataInstallerBaseName", mapDataInstallerBaseName)
-        variableMap.put("mapDataVersion", mapDataVersion)
-        variableMap.put("windowInstallerName", windowInstallerName)
-
-        doFirst {
-
-            val outputFile = debuggingOutputFile.get().asFile
-            outputFile.parentFile.mkdirs()
-
-            outputFile.writeText("projectFile = $configFile\n")
-            variableMap.get().forEach { entry: Map.Entry<String, Any> ->
-                outputFile.appendText(
-                    "${entry.key} = ${entry.value}\n"
-                )
-            }
-        }
+        variables.put("installerOutputDir", installerOutputDirProperty)
+        variables.put("linuxInstallerName", linuxInstallerName)
+        variables.put("mapDataDir", mapDataDir)
+        variables.put("mapDataInstallerBaseName", mapDataInstallerBaseName)
+        variables.put("mapDataVersion", mapDataVersion)
+        variables.put("windowInstallerName", windowInstallerName)
     }
 
-    register<DefaultTask>("build") {
-        dependsOn(
-            getByName("installer"),
-            getByName("writeConfiguration"),
-        )
+    named("build") {
+        dependsOn(getByName("installer"))
     }
 }
