@@ -96,10 +96,10 @@ tasks {
         inputs.dir(mapDataDir).withPathSensitivity(RELATIVE)
         inputs.property("windowInstallerName", windowInstallerName)
 
+        outputs.file(install4jOutputsFile)
         outputs.file(install4jUpdatesFile)
         outputs.file(linuxInstallerFile)
         outputs.file(windowsInstallerFile)
-        outputs.file(install4jOutputsFile)
 
         outputs.cacheIf { true }
 
@@ -112,6 +112,23 @@ tasks {
         variables.put("mapDataInstallerBaseName", mapDataInstallerBaseName)
         variables.put("mapDataVersion", mapDataVersion)
         variables.put("windowInstallerName", windowInstallerName)
+
+        doFirst {
+
+            // Output the configuration
+            println("\n=======\nInputs:\n=======")
+            println("projectFile = ${projectFile.get()}")
+            variables.get().forEach { entry: Map.Entry<String, Any> ->
+                println("${entry.key} = ${entry.value}")
+            }
+
+            println("\n========\nOutputs:\n========")
+            println(install4jOutputsFile.get())
+            println(install4jUpdatesFile.get())
+            println(linuxInstallerFile.get())
+            println(windowsInstallerFile.get())
+            println()
+        }
     }
 
     named("build") {
