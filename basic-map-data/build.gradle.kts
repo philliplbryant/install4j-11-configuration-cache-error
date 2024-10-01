@@ -47,7 +47,7 @@ install4j {
 
 tasks {
 
-    val dataDir = project.layout.buildDirectory.dir("data")
+    val dataDir: Provider<Directory> = project.layout.buildDirectory.dir("data")
 
     val unzipMapData by registering(Sync::class) {
 
@@ -61,22 +61,20 @@ tasks {
         dependsOn(unzipMapData)
 
         // Inputs
-        val configFile = file("basic-map-data.install4j")
-        val installerOutputDir: Provider<Directory> =
-            project.layout.buildDirectory.dir("installers/${project.name}")
-        val installerOutputDirProperty: Provider<String> = installerOutputDir.map {
-            relativePath(it.asFile)
-        }
+        val configFile = file(relativePath("basic-map-data.install4j"))
         val mapDataInstallerBaseName = "Basic-Map-Data"
         val linuxInstallerName = "Install-$mapDataInstallerBaseName-Linux"
-        val mapDataDir = dataDir.map { it: Directory ->
+        val mapDataVersion = "1.0"
+        val mapDataDir: Provider<String> = dataDir.map {
             relativePath(it.dir("mapdata"))
         }
-        val mapDataVersion = "1.0"
         val windowInstallerName = "Install-$mapDataInstallerBaseName-" +
                 "Windows"
 
         // Outputs
+        val installerOutputDir: Provider<Directory> =
+            project.layout.buildDirectory.dir("installers/${project.name}")
+        val installerOutputDirProperty = installerOutputDir.map { relativePath(it.asFile) }
         val install4jOutputsFile: Provider<String> = installerOutputDir.map {
             relativePath(it.file("output.txt"))
         }
@@ -91,18 +89,17 @@ tasks {
         }
 
         // Enable up-to-date checking
-        inputs.file(configFile).withPathSensitivity(RELATIVE)
         inputs.property("installerOutputDir", installerOutputDirProperty)
         inputs.property("mapDataInstallerBaseName", mapDataInstallerBaseName)
         inputs.property("linuxInstallerName", linuxInstallerName)
-        inputs.property("mapDataDir", mapDataDir)
         inputs.property("mapDataVersion", mapDataVersion)
+        inputs.dir(mapDataDir).withPathSensitivity(RELATIVE)
         inputs.property("windowInstallerName", windowInstallerName)
 
-        outputs.file(install4jOutputsFile)
         outputs.file(install4jUpdatesFile)
         outputs.file(linuxInstallerFile)
         outputs.file(windowsInstallerFile)
+        outputs.file(install4jOutputsFile)
 
         outputs.cacheIf { true }
 
