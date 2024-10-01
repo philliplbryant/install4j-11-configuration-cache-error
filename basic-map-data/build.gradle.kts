@@ -1,4 +1,5 @@
 import com.install4j.gradle.Install4jTask
+import org.gradle.api.tasks.PathSensitivity.RELATIVE
 import org.gradle.kotlin.dsl.support.serviceOf
 
 plugins {
@@ -60,6 +61,7 @@ tasks {
         dependsOn(unzipMapData)
 
         // Inputs
+        val configFile = file("basic-map-data.install4j")
         val installerOutputDir: Provider<Directory> =
             project.layout.buildDirectory.dir("installers/${project.name}")
         val installerOutputDirProperty: Provider<String> = installerOutputDir.map {
@@ -89,7 +91,7 @@ tasks {
         }
 
         // Enable up-to-date checking
-        // projectFile is marked @Input; no need to specify it here
+        inputs.file(configFile).withPathSensitivity(RELATIVE)
         inputs.property("installerOutputDir", installerOutputDirProperty)
         inputs.property("mapDataInstallerBaseName", mapDataInstallerBaseName)
         inputs.property("linuxInstallerName", linuxInstallerName)
@@ -105,8 +107,7 @@ tasks {
         outputs.cacheIf { true }
 
         // Specify inputs to the Install4J compiler
-        projectFile = file(relativePath("basic-map-data.install4j"))
-        destination.set(installerOutputDir.map { it.asFile })
+        projectFile = configFile
 
         variables.put("installerOutputDir", installerOutputDirProperty)
         variables.put("linuxInstallerName", linuxInstallerName)
