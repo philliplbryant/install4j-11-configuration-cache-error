@@ -42,7 +42,7 @@ dependencies {
 
 // TODO: Specify Install4J license information
 install4j {
-    license = "FLOAT:taskmaster.jre.saic.com"
+    license = "FLOAT:install4j.my.company.com"
 }
 
 tasks {
