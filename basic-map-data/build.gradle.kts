@@ -89,12 +89,8 @@ tasks {
         }
 
         // Enable up-to-date checking
-        inputs.property("installerOutputDir", installerOutputDirProperty)
-        inputs.property("mapDataInstallerBaseName", mapDataInstallerBaseName)
-        inputs.property("linuxInstallerName", linuxInstallerName)
-        inputs.property("mapDataVersion", mapDataVersion)
+        inputs.file(configFile).withPathSensitivity(RELATIVE)
         inputs.dir(mapDataDir).withPathSensitivity(RELATIVE)
-        inputs.property("windowInstallerName", windowInstallerName)
 
         outputs.file(install4jOutputsFile)
         outputs.file(install4jUpdatesFile)
